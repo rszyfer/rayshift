@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import { useGoogleMapsScript } from "./useGoogleMaps";
 import type { SearchCenter } from "./types";
 
 interface AddressSearchProps {
+  apiKey: string;
   onSelect: (center: SearchCenter) => void;
   onClear: () => void;
   active: boolean;
@@ -10,18 +11,18 @@ interface AddressSearchProps {
 
 const DEBOUNCE_MS = 220;
 
-export function AddressSearch({ onSelect, onClear, active }: AddressSearchProps) {
-  const placesLib = useMapsLibrary("places");
+export function AddressSearch({ apiKey, onSelect, onClear, active }: AddressSearchProps) {
+  const { loaded } = useGoogleMapsScript(apiKey, ["places"]);
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autocompleteService = useMemo(
-    () => (placesLib ? new placesLib.AutocompleteService() : null),
-    [placesLib]
+    () => (loaded ? new google.maps.places.AutocompleteService() : null),
+    [loaded]
   );
-  const geocoder = useMemo(() => (placesLib ? new google.maps.Geocoder() : null), [placesLib]);
+  const geocoder = useMemo(() => (loaded ? new google.maps.Geocoder() : null), [loaded]);
 
   useEffect(() => {
     if (!active) setQuery("");

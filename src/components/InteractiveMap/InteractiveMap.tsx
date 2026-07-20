@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { addPropertyControls, ControlType } from "framer";
-import { APIProvider } from "@vis.gl/react-google-maps";
 import { MapCanvas } from "./MapCanvas";
 import { TopBar } from "./TopBar";
 import { InfoPanel } from "./InfoPanel";
@@ -114,8 +113,9 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
     mapArea = <StatusMessage>Cargando pines…</StatusMessage>;
   } else {
     mapArea = (
-      <APIProvider apiKey={apiKey} libraries={["places"]}>
+      <>
         <MapCanvas
+          apiKey={apiKey}
           defaultCenter={defaultCenter}
           defaultZoom={defaultZoom}
           pins={pins}
@@ -126,6 +126,7 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
           onSelectPin={setSelectedPin}
         />
         <TopBar
+          apiKey={apiKey}
           filterConfig={filterableFields}
           pins={pins}
           activeFilters={activeFilters}
@@ -138,7 +139,7 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
           isMobile={isMobile}
           portalRoot={portalRoot}
         />
-      </APIProvider>
+      </>
     );
   }
 

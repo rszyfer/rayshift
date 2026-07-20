@@ -4,6 +4,7 @@ import { passesFilters } from "./filters";
 import type { ActiveFilters, FieldConfig, Pin, SearchCenter } from "./types";
 
 interface TopBarProps {
+  apiKey: string;
   filterConfig: FieldConfig[];
   pins: Pin[];
   activeFilters: ActiveFilters;
@@ -18,6 +19,7 @@ interface TopBarProps {
 }
 
 export function TopBar({
+  apiKey,
   filterConfig,
   pins,
   activeFilters,
@@ -34,7 +36,7 @@ export function TopBar({
 
   return (
     <div className="rs-topbar">
-      <AddressSearch onSelect={onSelectAddress} onClear={onClearAddress} active={!!searchCenter} />
+      <AddressSearch apiKey={apiKey} onSelect={onSelectAddress} onClear={onClearAddress} active={!!searchCenter} />
       <div className="rs-bar-divider" />
       <div className="rs-filter-buttons" style={{ display: "flex", alignItems: "center", gap: 2 }}>
         {filterConfig.map((f) => (

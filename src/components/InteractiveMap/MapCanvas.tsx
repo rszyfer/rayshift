@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Map, useMap } from "@vis.gl/react-google-maps";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { DEFAULT_MAP_STYLE } from "./constants";
 import { boundsForRadiusKm, haversineKm } from "./geo";
 import { passesFilters } from "./filters";
 import { buildPinIcon, buildSearchMarkerIcon, opacityForState } from "./pinIcon";
+import { useGoogleMapsScript } from "./useGoogleMaps";
 import type { ActiveFilters, FieldConfig, LatLng, Pin, PinVisualState, SearchCenter } from "./types";
 
 function computePinState(
@@ -19,14 +19,11 @@ function computePinState(
 }
 
 /** Centers the map on the visitor's geolocation once, falling back to the country default (already the Map's initial center) if permission is denied or unavailable. */
-function MapController({ fallbackCenter }: { fallbackCenter: LatLng }) {
-  const map = useMap();
+function useGeolocationCenter(map: google.maps.Map | null, fallbackCenter: LatLng) {
   const didInit = useRef(false);
 
   useEffect(() => {
     if (!map) return;
-    // Zoom control position can only reference google.maps.* after the API
-    // script has actually loaded, which is exactly when `map` becomes non-null.
     map.setOptions({ zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM } });
   }, [map]);
 
@@ -39,11 +36,10 @@ function MapController({ fallbackCenter }: { fallbackCenter: LatLng }) {
       { timeout: 3000 }
     );
   }, [map, fallbackCenter]);
-
-  return null;
 }
 
 interface PinsLayerProps {
+  map: google.maps.Map | null;
   pins: Pin[];
   filterConfig: FieldConfig[];
   activeFilters: ActiveFilters;
@@ -53,8 +49,7 @@ interface PinsLayerProps {
 }
 
 /** Renders every pin as a clustered classic Marker; filter/search changes only swap icons in place, never rebuild markers or the clusterer. */
-function PinsLayer({ pins, filterConfig, activeFilters, searchCenter, radiusKm, onSelectPin }: PinsLayerProps) {
-  const map = useMap();
+function PinsLayer({ map, pins, filterConfig, activeFilters, searchCenter, radiusKm, onSelectPin }: PinsLayerProps) {
   const markersRef = useRef<globalThis.Map<string, google.maps.Marker>>(new globalThis.Map());
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const onSelectRef = useRef(onSelectPin);
@@ -101,8 +96,7 @@ function PinsLayer({ pins, filterConfig, activeFilters, searchCenter, radiusKm, 
 }
 
 /** Distinctive black marker + faint radius circle at the searched address; fits the map to ~radiusKm around it. */
-function SearchOverlay({ searchCenter, radiusKm }: { searchCenter: SearchCenter | null; radiusKm: number }) {
-  const map = useMap();
+function useSearchOverlay(map: google.maps.Map | null, searchCenter: SearchCenter | null, radiusKm: number) {
   const markerRef = useRef<google.maps.Marker | null>(null);
   const circleRef = useRef<google.maps.Circle | null>(null);
 
@@ -145,11 +139,10 @@ function SearchOverlay({ searchCenter, radiusKm }: { searchCenter: SearchCenter 
     },
     []
   );
-
-  return null;
 }
 
 interface MapCanvasProps {
+  apiKey: string;
   defaultCenter: LatLng;
   defaultZoom: number;
   pins: Pin[];
@@ -161,12 +154,13 @@ interface MapCanvasProps {
 }
 
 /**
- * The Google Map itself plus its marker layers. Expects to be rendered
- * inside an <APIProvider> (see InteractiveMap.tsx) so sibling UI — like the
- * address search box — can share the same loaded `google.maps.places`
- * library instead of each loading the script independently.
+ * The Google Map itself plus its marker layers. Loads the Maps JS script
+ * directly (see useGoogleMapsScript) instead of via a React wrapper
+ * package, so sibling UI — like the address search box — can share the
+ * same loaded `google.maps.places` library by calling the same hook.
  */
 export function MapCanvas({
+  apiKey,
   defaultCenter,
   defaultZoom,
   pins,
@@ -176,20 +170,35 @@ export function MapCanvas({
   radiusKm,
   onSelectPin,
 }: MapCanvasProps) {
+  const { loaded, error } = useGoogleMapsScript(apiKey, ["places"]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
+  useEffect(() => {
+    if (!loaded || !containerRef.current || map) return;
+    setMap(
+      new google.maps.Map(containerRef.current, {
+        center: defaultCenter,
+        zoom: defaultZoom,
+        styles: DEFAULT_MAP_STYLE,
+        disableDefaultUI: true,
+        zoomControl: true,
+        clickableIcons: false,
+        gestureHandling: "greedy",
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  useGeolocationCenter(map, defaultCenter);
+  useSearchOverlay(map, searchCenter, radiusKm);
+
   return (
-    <Map
-      className="rs-map-el"
-      style={{ width: "100%", height: "100%" }}
-      defaultCenter={defaultCenter}
-      defaultZoom={defaultZoom}
-      styles={DEFAULT_MAP_STYLE}
-      disableDefaultUI
-      zoomControl
-      clickableIcons={false}
-      gestureHandling="greedy"
-    >
-      <MapController fallbackCenter={defaultCenter} />
+    <>
+      <div ref={containerRef} className="rs-map-el" style={{ width: "100%", height: "100%" }} />
+      {error && <div className="rs-status">Error cargando Google Maps: {error}</div>}
       <PinsLayer
+        map={map}
         pins={pins}
         filterConfig={filterConfig}
         activeFilters={activeFilters}
@@ -197,7 +206,6 @@ export function MapCanvas({
         radiusKm={radiusKm}
         onSelectPin={onSelectPin}
       />
-      <SearchOverlay searchCenter={searchCenter} radiusKm={radiusKm} />
-    </Map>
+    </>
   );
 }
