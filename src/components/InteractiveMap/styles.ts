@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DEFAULT_ACCENT, MOBILE_BREAKPOINT_PX } from "./constants";
+import { DEFAULT_ACCENT } from "./constants";
 
 export const ROOT_CLASS = "rs-imap";
 const STYLE_TAG_ID = "rs-interactive-map-styles";
@@ -139,43 +139,48 @@ const CSS = `
 .${ROOT_CLASS} .rs-legend .rs-legend-title { margin-top: 0; font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: .05em; }
 .${ROOT_CLASS} .rs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-/* ---- Responsive / mobile ---- */
-@media (max-width: ${MOBILE_BREAKPOINT_PX}px) {
-  .${ROOT_CLASS} .rs-topbar {
-    left: 0; right: 0; top: 0; transform: none; width: 100%; max-width: 100%;
-    border-radius: 0 0 16px 16px; border-top: none;
-    padding: 8px; padding-top: max(8px, env(safe-area-inset-top));
-  }
-  .${ROOT_CLASS} .rs-bar-search { flex: 1; min-width: 0; }
-  .${ROOT_CLASS} .rs-bar-search input { width: 100%; }
-  .${ROOT_CLASS} .rs-filter-buttons {
-    flex: 1; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .${ROOT_CLASS} .rs-filter-buttons::-webkit-scrollbar { display: none; }
-  .${ROOT_CLASS} .rs-filter-btn { flex-shrink: 0; }
-  .${ROOT_CLASS} .rs-pin-count { display: none; }
-  .${ROOT_CLASS} .rs-bar-divider.rs-last { display: none; }
-
-  .${ROOT_CLASS} .rs-dropdown-panel {
-    /* fixed (not absolute): the panel is nested inside a small per-button
-       wrapper, so it must escape that positioning context to dock as a
-       true full-width sheet at the bottom of the viewport. */
-    position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%;
-    border-radius: 18px 18px 0 0; max-height: 60vh;
-    box-shadow: 0 -10px 30px rgba(20,20,20,.20);
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-  }
-
-  .${ROOT_CLASS} .rs-info-panel {
-    left: 0; right: 0; bottom: 0; width: 100%; border-radius: 18px 18px 0 0;
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-    max-height: 45vh; overflow-y: auto;
-  }
-
-  .${ROOT_CLASS} .rs-legend-toggle { bottom: max(16px, env(safe-area-inset-bottom)); }
-  .${ROOT_CLASS} .rs-legend { bottom: calc(54px + env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
+/* ---- Responsive / mobile ----
+   Driven by a .rs-mobile class the component toggles itself (see
+   useContainerIsMobile / ResizeObserver in useResponsive.ts) based on the
+   component's OWN rendered width, not a @media viewport query. A Framer
+   frame can be narrow while the browser window around it stays wide (a
+   responsive-variant preview, the canvas editor, a component embedded in a
+   sidebar) — @media would never see that, so it has to be measured
+   directly on the element instead. */
+.${ROOT_CLASS}.rs-mobile .rs-topbar {
+  left: 0; right: 0; top: 0; transform: none; width: 100%; max-width: 100%;
+  border-radius: 0 0 16px 16px; border-top: none;
+  padding: 8px; padding-top: max(8px, env(safe-area-inset-top));
 }
+.${ROOT_CLASS}.rs-mobile .rs-bar-search { flex: 1; min-width: 0; }
+.${ROOT_CLASS}.rs-mobile .rs-bar-search input { width: 100%; }
+.${ROOT_CLASS}.rs-mobile .rs-filter-buttons {
+  flex: 1; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.${ROOT_CLASS}.rs-mobile .rs-filter-buttons::-webkit-scrollbar { display: none; }
+.${ROOT_CLASS}.rs-mobile .rs-filter-btn { flex-shrink: 0; }
+.${ROOT_CLASS}.rs-mobile .rs-pin-count { display: none; }
+.${ROOT_CLASS}.rs-mobile .rs-bar-divider.rs-last { display: none; }
+
+.${ROOT_CLASS}.rs-mobile .rs-dropdown-panel {
+  /* fixed (not absolute): the panel is nested inside a small per-button
+     wrapper, so it must escape that positioning context to dock as a
+     true full-width sheet at the bottom of the viewport. */
+  position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%;
+  border-radius: 18px 18px 0 0; max-height: 60vh;
+  box-shadow: 0 -10px 30px rgba(20,20,20,.20);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.${ROOT_CLASS}.rs-mobile .rs-info-panel {
+  left: 0; right: 0; bottom: 0; width: 100%; border-radius: 18px 18px 0 0;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  max-height: 45vh; overflow-y: auto;
+}
+
+.${ROOT_CLASS}.rs-mobile .rs-legend-toggle { bottom: max(16px, env(safe-area-inset-bottom)); }
+.${ROOT_CLASS}.rs-mobile .rs-legend { bottom: calc(54px + env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
 `;
 
 export function useInjectStyles(): void {

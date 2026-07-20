@@ -7,7 +7,7 @@ import { InfoPanel } from "./InfoPanel";
 import { Legend } from "./Legend";
 import { useSheetData } from "./useSheetData";
 import { useInjectStyles, ROOT_CLASS } from "./styles";
-import { useIsMobile } from "./useResponsive";
+import { useContainerIsMobile } from "./useResponsive";
 import { initialActiveFilters } from "./filters";
 import { COUNTRY_CONFIGS, getCountryConfig } from "./countryConfigs";
 import { DEFAULT_ACCENT } from "./constants";
@@ -54,7 +54,8 @@ function StatusMessage({ children }: { children: React.ReactNode }) {
  */
 export default function InteractiveMap({ apiKey, country, sheet, map, accentColor, style, className }: InteractiveMapProps) {
   useInjectStyles();
-  const isMobile = useIsMobile();
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
+  const isMobile = useContainerIsMobile(rootEl);
 
   const preset = getCountryConfig(country) ?? COUNTRY_CONFIGS.chile;
   const spreadsheetId = sheet?.spreadsheetId || preset.spreadsheetId;
@@ -142,7 +143,12 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
   }
 
   return (
-    <div className={`${ROOT_CLASS}${className ? ` ${className}` : ""}`} style={rootStyle} onClick={() => setOpenDropdown(null)}>
+    <div
+      ref={setRootEl}
+      className={`${ROOT_CLASS}${isMobile ? " rs-mobile" : ""}${className ? ` ${className}` : ""}`}
+      style={rootStyle}
+      onClick={() => setOpenDropdown(null)}
+    >
       {mapArea}
       <InfoPanel pin={selectedPin} fields={fields} eyebrowKey={preset.eyebrowKey} onClose={() => setSelectedPin(null)} />
       <Legend />
