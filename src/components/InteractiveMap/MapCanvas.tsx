@@ -5,11 +5,11 @@ import { DEFAULT_MAP_STYLE } from "./constants";
 import { boundsForRadiusKm, haversineKm } from "./geo";
 import { passesFilters } from "./filters";
 import { buildPinIcon, buildSearchMarkerIcon, opacityForState } from "./pinIcon";
-import type { ActiveFilters, FilterFieldConfig, LatLng, Pin, PinVisualState, SearchCenter } from "./types";
+import type { ActiveFilters, FieldConfig, LatLng, Pin, PinVisualState, SearchCenter } from "./types";
 
 function computePinState(
   pin: Pin,
-  filterConfig: FilterFieldConfig[],
+  filterConfig: FieldConfig[],
   activeFilters: ActiveFilters,
   searchCenter: SearchCenter | null,
   radiusKm: number
@@ -45,7 +45,7 @@ function MapController({ fallbackCenter }: { fallbackCenter: LatLng }) {
 
 interface PinsLayerProps {
   pins: Pin[];
-  filterConfig: FilterFieldConfig[];
+  filterConfig: FieldConfig[];
   activeFilters: ActiveFilters;
   searchCenter: SearchCenter | null;
   radiusKm: number;
@@ -153,7 +153,7 @@ interface MapCanvasProps {
   defaultCenter: LatLng;
   defaultZoom: number;
   pins: Pin[];
-  filterConfig: FilterFieldConfig[];
+  filterConfig: FieldConfig[];
   activeFilters: ActiveFilters;
   searchCenter: SearchCenter | null;
   radiusKm: number;

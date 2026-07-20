@@ -1,10 +1,10 @@
 import { AddressSearch } from "./AddressSearch";
 import { FilterDropdown } from "./FilterDropdown";
 import { passesFilters } from "./filters";
-import type { ActiveFilters, FilterFieldConfig, Pin, SearchCenter } from "./types";
+import type { ActiveFilters, FieldConfig, Pin, SearchCenter } from "./types";
 
 interface TopBarProps {
-  filterConfig: FilterFieldConfig[];
+  filterConfig: FieldConfig[];
   pins: Pin[];
   activeFilters: ActiveFilters;
   onChangeFilter: (key: string, next: Set<string>) => void;

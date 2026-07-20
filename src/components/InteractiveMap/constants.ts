@@ -1,5 +1,3 @@
-import type { FilterFieldConfig } from "./types";
-
 export const MOBILE_BREAKPOINT_PX = 680;
 
 export const STATE_COLORS = {
@@ -10,21 +8,6 @@ export const STATE_COLORS = {
 } as const;
 
 export const DEFAULT_ACCENT = "#2f6f5e";
-
-/**
- * Default filterable columns for the Chile sheet. `key` is the field on the
- * parsed Pin object; `sheetColumn` is the exact header text in the Google
- * Sheet. To make a new column filterable, add one entry here — the topbar
- * buttons, dropdown checkboxes, per-value counts, and the passesFilters()
- * logic all read this config generically, no other code changes needed.
- */
-export const DEFAULT_FILTER_CONFIG: FilterFieldConfig[] = [
-  { key: "negocio", label: "Negocio", sheetColumn: "Negocio" },
-  { key: "distribuidor", label: "Distribuidor", sheetColumn: "Distribuidor", multi: true },
-  { key: "importador", label: "Importador", sheetColumn: "Importador", multi: true },
-  { key: "region", label: "Región", sheetColumn: "Región" },
-  { key: "comuna", label: "Comuna", sheetColumn: "Comuna", dependsOn: "region" },
-];
 
 /**
  * Minimalist, near-monochrome Google Maps style approximating the CartoDB

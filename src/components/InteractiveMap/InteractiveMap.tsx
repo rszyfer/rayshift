@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { addPropertyControls, ControlType } from "framer";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { MapCanvas } from "./MapCanvas";
@@ -63,14 +63,15 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
     map?.centerLat != null && map?.centerLng != null ? { lat: map.centerLat, lng: map.centerLng } : preset.defaultCenter;
   const defaultZoom = map?.zoom ?? preset.defaultZoom;
   const radiusKm = map?.radiusKm ?? preset.radiusKm;
-  const filterConfig = preset.filters ?? [];
+  const fields = preset.fields;
+  const filterableFields = useMemo(() => fields.filter((f) => f.filterable !== false), [fields]);
 
   const { pins, loading, error } = useSheetData({
     apiKey,
     spreadsheetId,
     sheetGid,
     sheetName: preset.sheetName,
-    filterConfig,
+    fields,
   });
 
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>({});
@@ -83,7 +84,7 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
   useEffect(() => {
     if (pins.length > 0 && !initializedRef.current) {
       initializedRef.current = true;
-      setActiveFilters(initialActiveFilters(pins, filterConfig));
+      setActiveFilters(initialActiveFilters(pins, filterableFields));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pins]);
@@ -117,14 +118,14 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
           defaultCenter={defaultCenter}
           defaultZoom={defaultZoom}
           pins={pins}
-          filterConfig={filterConfig}
+          filterConfig={filterableFields}
           activeFilters={activeFilters}
           searchCenter={searchCenter}
           radiusKm={radiusKm}
           onSelectPin={setSelectedPin}
         />
         <TopBar
-          filterConfig={filterConfig}
+          filterConfig={filterableFields}
           pins={pins}
           activeFilters={activeFilters}
           onChangeFilter={handleChangeFilter}
@@ -143,7 +144,7 @@ export default function InteractiveMap({ apiKey, country, sheet, map, accentColo
   return (
     <div className={`${ROOT_CLASS}${className ? ` ${className}` : ""}`} style={rootStyle} onClick={() => setOpenDropdown(null)}>
       {mapArea}
-      <InfoPanel pin={selectedPin} filterConfig={filterConfig} onClose={() => setSelectedPin(null)} />
+      <InfoPanel pin={selectedPin} fields={fields} eyebrowKey={preset.eyebrowKey} onClose={() => setSelectedPin(null)} />
       <Legend />
       {/*
         Plain sibling of the topbar (which has backdrop-filter — a CSS

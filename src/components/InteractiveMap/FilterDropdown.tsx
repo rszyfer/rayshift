@@ -1,9 +1,9 @@
 import { createPortal } from "react-dom";
 import { countForValue, getValuesForFilter } from "./filters";
-import type { ActiveFilters, FilterFieldConfig, Pin } from "./types";
+import type { ActiveFilters, FieldConfig, Pin } from "./types";
 
 interface FilterDropdownProps {
-  filter: FilterFieldConfig;
+  filter: FieldConfig;
   pins: Pin[];
   activeFilters: ActiveFilters;
   isOpen: boolean;

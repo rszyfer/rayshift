@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { FilterFieldConfig, Pin } from "./types";
+import type { FieldConfig, Pin } from "./types";
 
 const BASE_COLUMNS = {
   id: "ID",
   nombre: "Nombre",
   direccion: "Direccion",
-  region: "Región",
   latitud: "Latitud",
   longitud: "Longitud",
 } as const;
@@ -15,7 +14,8 @@ interface UseSheetDataArgs {
   spreadsheetId: string;
   sheetGid?: number;
   sheetName?: string;
-  filterConfig: FilterFieldConfig[];
+  /** Every filterable/info-panel column to read off the sheet, from the country config. */
+  fields: FieldConfig[];
 }
 
 interface UseSheetDataResult {
@@ -41,7 +41,7 @@ function splitMulti(raw: string): string[] {
     .filter(Boolean);
 }
 
-export function parseSheetRows(values: string[][], filterConfig: FilterFieldConfig[]): Pin[] {
+export function parseSheetRows(values: string[][], fields: FieldConfig[]): Pin[] {
   if (values.length === 0) return [];
   const header = values[0];
   const colIndex = (name: string) => header.indexOf(name);
@@ -52,7 +52,7 @@ export function parseSheetRows(values: string[][], filterConfig: FilterFieldConf
   const latIdx = colIndex(BASE_COLUMNS.latitud);
   const lngIdx = colIndex(BASE_COLUMNS.longitud);
 
-  const filterIdx = filterConfig.map((f) => ({ f, idx: colIndex(f.sheetColumn) }));
+  const fieldIdx = fields.map((f) => ({ f, idx: colIndex(f.sheetColumn) }));
 
   const missing = [
     ["ID", idIdx],
@@ -72,10 +72,10 @@ export function parseSheetRows(values: string[][], filterConfig: FilterFieldConf
     const lng = parseFloat(row[lngIdx]);
     if (!id || Number.isNaN(lat) || Number.isNaN(lng)) continue;
 
-    const fields: Record<string, string | string[]> = {};
-    filterIdx.forEach(({ f, idx }) => {
+    const rowFields: Record<string, string | string[]> = {};
+    fieldIdx.forEach(({ f, idx }) => {
       const raw = idx >= 0 ? row[idx] ?? "" : "";
-      fields[f.key] = f.multi ? splitMulti(raw) : raw.trim();
+      rowFields[f.key] = f.multi ? splitMulti(raw) : raw.trim();
     });
 
     pins.push({
@@ -84,18 +84,18 @@ export function parseSheetRows(values: string[][], filterConfig: FilterFieldConf
       direccion: row[direccionIdx]?.trim() ?? "",
       lat,
       lng,
-      fields,
+      fields: rowFields,
     });
   }
   return pins;
 }
 
-export function useSheetData({ apiKey, spreadsheetId, sheetGid, sheetName, filterConfig }: UseSheetDataArgs): UseSheetDataResult {
+export function useSheetData({ apiKey, spreadsheetId, sheetGid, sheetName, fields }: UseSheetDataArgs): UseSheetDataResult {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const filterConfigRef = useRef(filterConfig);
-  filterConfigRef.current = filterConfig;
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +116,7 @@ export function useSheetData({ apiKey, spreadsheetId, sheetGid, sheetName, filte
         if (!res.ok) throw new Error(`No se pudo leer el Sheet (${res.status})`);
         const json = await res.json();
         const values: string[][] = json.values ?? [];
-        const parsed = parseSheetRows(values, filterConfigRef.current);
+        const parsed = parseSheetRows(values, fieldsRef.current);
         if (!cancelled) setPins(parsed);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
